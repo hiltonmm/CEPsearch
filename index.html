@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Consulta de CEP</title>
+	<script type="text/javascript" src="js/jquery-3.5.1.min.js"></script>
+	<script type="text/javascript" src="js/jquery.mask.min.js"></script>
+</head>
+	<script type="text/javascript">
+		/* NESSE PROJETO FOI UTILIZADO O FRAMEWORK JQUEREY 3.5.1<br>
+		E O PLUGIN jQuery Mask Plugin v1.14.16 --> github.com/igorescobar/jQuery-Mask-Plugin
+		e o WEBSERVICE https://viacep.com.br/
+		*/
+		$(document).ready(function() {
+			
+			//FORMATAÇÃO DA MASK DE DIGITAÇÃO DO CEP 	
+			$("input[mask='cep']").mask("00.000-000",{autoclear: false});
+			
+			//ESTA FUNÇÃO LIMPA O FORMULARIO
+			function limpaForm(prefix) {
+				$("#"+prefix+"_Logradouro").val("");
+				$("#"+prefix+"_Bairro").val("");
+				$("#"+prefix+"_Municipio").val("");
+				$("#"+prefix+"_UF").val("");
+			}
+			
+			// ESTA É A FUNÇÃO QUE CONSULTA O CEP E PREENCHE O FORMULARIO DE ENDEREÇO
+			// UTILIZEI O MESMO SELETOR DA MASCARA DE FORMATAÇÃO DO CAMPO DESSA FORMA EU POSSO APROVEITAR A FUNÇÃO PARA VARIOS PREENCHIMENTOS DIFERENTES
+			
+			$("input[mask='cep']").blur(function() {
+				
+				var prefix = $(this).attr('id').split("_")[0]; //prefixo do campo 
+				var cep = $(this).val().replace(/\D/g, ''); // pega o cep formatado e deixa só os numeros 
+				
+				if (cep != "") { // verifico se o cpf não ta vazio 
+					var validacep = /^[0-9]{8}$/; // expressão regular, somente numeros com 8 digitos
+					if(validacep.test(cep)) { // valida se cep é valido 
+						$.getJSON("https://viacep.com.br/ws/"+ cep +"/json/?callback=?", function(dados) { // consutal ao webservice 
+							if (!("erro" in dados)) { // verifica se o retorno da conuslta é um erro ou se retornou as variaveis esperadas
+								$("#"+prefix+"_Logradouro").val(dados.logradouro); // preenche o campo Logradouro 
+								$("#"+prefix+"_Bairro").val(dados.bairro); // preenche o campo Bairro 
+								$("#"+prefix+"_Municipio").val(dados.localidade); // preenche o campo Municipio 
+								$("#"+prefix+"_UF").val(dados.uf); // preenche o campo UF
+							} else {
+								// erro ao consultar o webservice CEP não encontrado ou outro erro qualqer  
+								alert("CEP não localizado");
+								limpaForm(prefix);
+							}
+						});
+					} else {
+						// erro se o cep for invalido
+						alert("CEP inválido");
+						limpaForm(prefix);
+					}
+				} else {
+					//erro se o cep estive vazio
+					alert("CEP não preenchido");
+					limpaForm(prefix);
+				}
+			});
+		
+	});	
+	</script>
+<body>
+	<!-- o prefixo server para caso seja utilizado no mesmo formulario 2 endereços diferentes, o prefixo então deve ser substituido por algo que identifique e indivdualize o campo -->
+	<label>CEP: 		<input type="text" id="prefixo_Cep" name="prefixo_Cep" mask="cep"></label><br>
+	<label>LOGRADOURO: 	<input type="text" id="prefixo_Logradouro" name="prefixo_Logradouro" ></label><br>
+	<label>COMPLEMENTO: <input type="text" id="prefixo_Complemento" name="prefixo_Complemento"></label><br>
+	<label>BAIRRO: 		<input type="text" id="prefixo_Bairro" name="prefixo_Bairro"></label><br>
+	<label>MUNICIPIO: 	<input type="text" id="prefixo_Municipio" name="prefixo_Municipio"></label><br>
+	<label>UF: 			<input type="text" id="prefixo_UF" name="prefixo_UF"></label><br>
+</body>
+</html>
